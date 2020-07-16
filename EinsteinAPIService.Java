@@ -29,15 +29,15 @@ public class EinsteinAPIService {
         String access_token = JWTBearerFlow.getAccessToken(OAUTH_END_POINT, jwt);
         return access_token;    
     }
-    public static String imageOCR(String endPoint, String sample, String model, boolean isBase64){
-        String result = einsteinAPICall(endPoint, sample, model, isBase64);
+    public static String imageOCR(String endPoint, String sample, String model, boolean isBase64, boolean isCard){
+        String result = einsteinAPICall(endPoint, sample, model, isBase64, isCard);
         return result;
     }
-    public static String predictImage(String endPoint, String sample, String model, boolean isBase64){
-        String result = einsteinAPICall(endPoint, sample, model, isBase64);
+    public static String predictImage(String endPoint, String sample, String model, boolean isBase64, boolean isCard){
+        String result = einsteinAPICall(endPoint, sample, model, isBase64, isCard);
         return result;
     }
-    private static String einsteinAPICall(String endPoint, String sample, String model, boolean isBase64) {
+    private static String einsteinAPICall(String endPoint, String sample, String model, boolean isBase64, boolean isCard) {
         string contentType = HttpFormBuilder.GetContentType();
         String access_token = getAccessToken();
         
@@ -47,13 +47,18 @@ public class EinsteinAPIService {
         form64 += HttpFormBuilder.WriteBoundary();
         form64 += HttpFormBuilder.WriteBodyParameter('modelId', EncodingUtil.urlEncode(model, 'UTF-8'));
         form64 += HttpFormBuilder.WriteBoundary();
+        if(isCard){
+            form64 += HttpFormBuilder.WriteBodyParameter('task', EncodingUtil.urlEncode('contact', 'UTF-8'));
+            form64 += HttpFormBuilder.WriteBoundary();
+        }
         if(isBase64) {
             form64 += HttpFormBuilder.WriteBodyParameter('sampleBase64Content', sample);
         } else {
             form64 += HttpFormBuilder.WriteBodyParameter('sampleLocation', sample);
         }
+        
         form64 += HttpFormBuilder.WriteBoundary(HttpFormBuilder.EndingType.CrLf);
-
+        
         blob formBlob = EncodingUtil.base64Decode(form64);
         string contentLength = string.valueOf(formBlob.size());
         
@@ -71,6 +76,7 @@ public class EinsteinAPIService {
         Http http = new Http();
         try {
             HTTPResponse res = http.send(httpRequest);
+            System.debug(System.LoggingLevel.DEBUG, ' Response From Einstein Platform API '+res.getBody());
             if (res.getStatusCode() == 200) {
                 return res.getBody();
             }
